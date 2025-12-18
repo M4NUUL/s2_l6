@@ -1,3 +1,3 @@
-/home/m4nuul/Downloads/s2_l6_fixed/build/CMakeFiles/kolibri.dir
-/home/m4nuul/Downloads/s2_l6_fixed/build/CMakeFiles/edit_cache.dir
-/home/m4nuul/Downloads/s2_l6_fixed/build/CMakeFiles/rebuild_cache.dir
+C:/Users/Administrator/Desktop/НГТУ/Програмирование/techshop/build/CMakeFiles/techshop.dir
+C:/Users/Administrator/Desktop/НГТУ/Програмирование/techshop/build/CMakeFiles/edit_cache.dir
+C:/Users/Administrator/Desktop/НГТУ/Програмирование/techshop/build/CMakeFiles/rebuild_cache.dir

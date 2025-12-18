@@ -1,0 +1,8 @@
+[
+{
+  "directory": "C:/Users/Administrator/Desktop/НГТУ/Програмирование/techshop/build",
+  "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -g -std=gnu++17 -o CMakeFiles\\techshop.dir\\main.cpp.obj -c C:\\Users\\Administrator\\Desktop\\НГТУ\\Програмирование\\techshop\\main.cpp",
+  "file": "C:/Users/Administrator/Desktop/НГТУ/Програмирование/techshop/main.cpp",
+  "output": "C:/Users/Administrator/Desktop/НГТУ/Програмирование/techshop/build/CMakeFiles/techshop.dir/main.cpp.obj"
+}
+]

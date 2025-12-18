@@ -1,1 +1,0 @@
-/usr/bin/c++ CMakeFiles/kolibri.dir/src/main.cpp.o CMakeFiles/kolibri.dir/src/db.cpp.o CMakeFiles/kolibri.dir/src/kolibri_repo.cpp.o -o kolibri  -lpqxx 
