@@ -1,43 +1,39 @@
 CREATE SCHEMA IF NOT EXISTS kolibri;
 SET search_path TO kolibri;
 
--- Типы
 DO $$ BEGIN
-  CREATE TYPE doc_type AS ENUM ('SNILS','INN','PASSPORT','OMS','OTHER');
+  CREATE TYPE doc_type AS ENUM ('SNILS','INN','PASSPORT','OTHER');
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
 DO $$ BEGIN
-  CREATE TYPE contact_type AS ENUM ('PHONE','EMAIL','TELEGRAM','ADDRESS','OTHER');
+  CREATE TYPE contact_type AS ENUM ('PHONE','EMAIL','OTHER');
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
--- 1) Люди
+-- Люди
 CREATE TABLE IF NOT EXISTS person (
   person_id   BIGSERIAL PRIMARY KEY,
   last_name   TEXT NOT NULL,
   first_name  TEXT NOT NULL,
   middle_name TEXT,
   birth_date  DATE,
-  gender      CHAR(1) CHECK (gender IN ('M','F')),
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT uq_person UNIQUE (last_name, first_name, middle_name, birth_date)
 );
 
--- 2) Документы
+-- Документы
 CREATE TABLE IF NOT EXISTS person_doc (
-  doc_id      BIGSERIAL PRIMARY KEY,
-  person_id   BIGINT NOT NULL REFERENCES person(person_id) ON DELETE CASCADE,
-  doc_type    doc_type NOT NULL,
-  doc_number  TEXT NOT NULL,
-  issued_by   TEXT,
-  issued_date DATE,
-  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
-  CONSTRAINT uq_doc_global UNIQUE (doc_type, doc_number),
+  doc_id     BIGSERIAL PRIMARY KEY,
+  person_id  BIGINT NOT NULL REFERENCES person(person_id) ON DELETE CASCADE,
+  doc_type   doc_type NOT NULL,
+  doc_number TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT uq_doc UNIQUE (doc_type, doc_number),
   CONSTRAINT uq_doc_per_person UNIQUE (person_id, doc_type)
 );
 
--- 3) Контакты
+-- Контакты (телефон)
 CREATE TABLE IF NOT EXISTS person_contact (
   contact_id    BIGSERIAL PRIMARY KEY,
   person_id     BIGINT NOT NULL REFERENCES person(person_id) ON DELETE CASCADE,
@@ -45,45 +41,45 @@ CREATE TABLE IF NOT EXISTS person_contact (
   contact_value TEXT NOT NULL,
   is_primary    BOOLEAN NOT NULL DEFAULT false,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
-  CONSTRAINT uq_contact_global UNIQUE (contact_type, contact_value)
+  CONSTRAINT uq_contact UNIQUE (contact_type, contact_value)
 );
 
--- 4) Сотрудники
-CREATE TABLE IF NOT EXISTS employee (
-  employee_id BIGSERIAL PRIMARY KEY,
-  full_name   TEXT NOT NULL,
-  role_name   TEXT NOT NULL DEFAULT 'operator',
-  is_active   BOOLEAN NOT NULL DEFAULT true
+-- Образование
+CREATE TABLE IF NOT EXISTS education (
+  education_id BIGSERIAL PRIMARY KEY,
+  person_id    BIGINT NOT NULL REFERENCES person(person_id) ON DELETE CASCADE,
+  organization TEXT,
+  faculty      TEXT,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- 5) Статусы обращений
-CREATE TABLE IF NOT EXISTS ticket_status (
-  status_id   SMALLSERIAL PRIMARY KEY,
-  status_code TEXT NOT NULL UNIQUE,
-  status_name TEXT NOT NULL
+-- Профиль/прочее из CSV
+CREATE TABLE IF NOT EXISTS person_profile (
+  person_id     BIGINT PRIMARY KEY REFERENCES person(person_id) ON DELETE CASCADE,
+  citizenship   TEXT,
+  last_edu_doc  TEXT,
+  squad         TEXT,
+  prof_training TEXT,
+  membership    TEXT
 );
 
--- 6) Обращения
-CREATE TABLE IF NOT EXISTS ticket (
-  ticket_id   BIGSERIAL PRIMARY KEY,
-  person_id   BIGINT NOT NULL REFERENCES person(person_id) ON DELETE CASCADE,
-  employee_id BIGINT REFERENCES employee(employee_id) ON DELETE SET NULL,
-  status_id   SMALLINT NOT NULL REFERENCES ticket_status(status_id),
-  title       TEXT NOT NULL,
-  description TEXT,
-  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
-  closed_at   TIMESTAMPTZ
+-- STAGING под CSV (12 колонок в правильном порядке)
+DROP TABLE IF EXISTS person_import;
+CREATE TABLE person_import (
+  fio             TEXT,
+  citizenship      TEXT,
+  birth_date_raw   TEXT,   -- MM/DD/YYYY
+  organization     TEXT,
+  faculty          TEXT,
+  snils            TEXT,
+  inn              TEXT,
+  last_edu_doc     TEXT,
+  phone            TEXT,
+  squad            TEXT,
+  prof_training    TEXT,
+  membership       TEXT
 );
 
--- Индексы под быстрый поиск
-CREATE INDEX IF NOT EXISTS idx_person_fio
-  ON person (last_name, first_name, middle_name);
-
-CREATE INDEX IF NOT EXISTS idx_contact_phone
-  ON person_contact (contact_type, contact_value);
-
-CREATE INDEX IF NOT EXISTS idx_doc_type_number
-  ON person_doc (doc_type, doc_number);
-
-CREATE INDEX IF NOT EXISTS idx_ticket_person
-  ON ticket (person_id);
+CREATE INDEX IF NOT EXISTS idx_person_fio ON person(last_name, first_name, middle_name);
+CREATE INDEX IF NOT EXISTS idx_doc ON person_doc(doc_type, doc_number);
+CREATE INDEX IF NOT EXISTS idx_phone ON person_contact(contact_type, contact_value);

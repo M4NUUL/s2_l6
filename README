@@ -1,0 +1,37 @@
+# s2_l6 — СПО Колибри (PostgreSQL + psql)
+
+## 1) Создание БД
+sudo -u postgres psql -f sql/00_create_db.sql
+
+## 2) Создание таблиц
+psql -h localhost -U m4nuul -d kolibri_db -f sql/01_schema.sql
+
+## 3) Импорт CSV в staging
+psql -h localhost -U m4nuul -d kolibri_db \
+  -v csv='/home/m4nuul/Coding/s2_l6/spo_kolibri.csv' \
+  -f sql/02_import_stage.sql
+
+## 4) Нормализация staging -> таблицы
+psql -h localhost -U m4nuul -d kolibri_db -f sql/03_normalize.sql
+
+## 5) Добавить запись (INSERT)
+psql -h localhost -U m4nuul -d kolibri_db \
+  -v last="Иванов" -v first="Иван" -v middle="Иванович" -v birth="2001-02-03" \
+  -v citizenship="РФ" -v org="НГТУ" -v faculty="ФПМИ" \
+  -v snils="123-456-789 00" -v inn="123456789012" -v phone="+7999..." \
+  -v last_edu="Аттестат" -v squad="1" -v prof="да" -v member="да" \
+  -f sql/10_add.sql
+
+## 6) Найти всё по ФИО
+psql -h localhost -U m4nuul -d kolibri_db \
+  -v last="Иванов" -v first="Иван" -v middle="Иванович" \
+  -f sql/20_find_fio.sql
+
+## 7) Найти ФИО по телефону
+psql -h localhost -U m4nuul -d kolibri_db -v phone="+7999..." -f sql/30_find_phone.sql
+
+## 8) Найти ИНН по СНИЛС
+psql -h localhost -U m4nuul -d kolibri_db -v snils="123-456-789 00" -f sql/40_inn_by_snils.sql
+
+## 9) Удалить по ID
+psql -h localhost -U m4nuul -d kolibri_db -v id=123 -f sql/50_delete.sql

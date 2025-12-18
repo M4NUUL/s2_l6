@@ -1,94 +1,42 @@
-#include "db.hpp"
-#include "repo.hpp"
 #include <iostream>
-#include <string>
-#include <optional>
-
-static std::optional<std::string> readOptional(const std::string& prompt) {
-  std::cout << prompt << " (пусто = нет): ";
-  std::string s;
-  std::getline(std::cin, s);
-  if (s.empty()) return std::nullopt;
-  return s;
-}
 
 int main() {
-  try {
-    // Поменяй под себя!
-    std::string conn =
-      "host=localhost port=5432 dbname=kolibri_db user=postgres password=postgres";
+  std::cout <<
+R"(kolibri_cli (C++ каркас проекта)
 
-    Db db(conn);
-    Repo repo(db);
+Работа с БД выполняется через PostgreSQL (psql) и SQL-скрипты в папке ./sql
 
-    while (true) {
-      std::cout << "\n=== СПО Колибри (БД) ===\n"
-                   "1) Добавить человека (ФИО + СНИЛС + ИНН + телефон)\n"
-                   "2) Найти ФИО по телефону\n"
-                   "3) Найти ИНН по СНИЛС\n"
-                   "4) Удалить человека по ID\n"
-                   "0) Выход\n"
-                   "Выбор: ";
+Быстрый старт:
+  1) Создать БД (если нужно):
+     sudo -u postgres psql -f sql/00_create_db.sql
 
-      std::string choice;
-      std::getline(std::cin, choice);
+  2) Создать таблицы:
+     psql -h localhost -U m4nuul -d kolibri_db -f sql/01_schema.sql
 
-      if (choice == "0") break;
+  3) Импорт CSV в staging:
+     psql -h localhost -U m4nuul -d kolibri_db -v csv='/home/m4nuul/Coding/s2_l6/spo_kolibri.csv' -f sql/02_import_stage.sql
 
-      if (choice == "1") {
-        std::string last, first, snils, inn, phone;
-        std::cout << "Фамилия: "; std::getline(std::cin, last);
-        std::cout << "Имя: "; std::getline(std::cin, first);
-        auto middle = readOptional("Отчество");
-        std::cout << "СНИЛС (пример 123-456-789 00): "; std::getline(std::cin, snils);
-        std::cout << "ИНН: "; std::getline(std::cin, inn);
-        std::cout << "Телефон (пример +79998887766): "; std::getline(std::cin, phone);
+  4) Нормализация staging -> нормальные таблицы:
+     psql -h localhost -U m4nuul -d kolibri_db -f sql/03_normalize.sql
 
-        long id = repo.addPersonWithDocsAndPhone(last, first, middle, snils, inn, phone);
-        std::cout << "OK. Добавлен person_id=" << id << "\n";
-      }
+Основные операции:
+  Добавить:
+    psql -h localhost -U m4nuul -d kolibri_db -v last="Иванов" -v first="Иван" -v middle="Иванович" -v birth="2001-02-03" \
+      -v citizenship="РФ" -v org="НГТУ" -v faculty="ФПМИ" -v snils="123-456-789 00" -v inn="123456789012" -v phone="+7999..." \
+      -v last_edu="Аттестат" -v squad="1" -v prof="да" -v member="да" \
+      -f sql/10_add.sql
 
-      else if (choice == "2") {
-        std::string phone;
-        std::cout << "Телефон: ";
-        std::getline(std::cin, phone);
+  Найти по ФИО:
+    psql -h localhost -U m4nuul -d kolibri_db -v last="Иванов" -v first="Иван" -v middle="Иванович" -f sql/20_find_fio.sql
 
-        auto p = repo.findByPhone(phone);
-        if (!p) std::cout << "Не найдено\n";
-        else {
-          std::cout << "Найден: " << p->last << " " << p->first;
-          if (p->middle) std::cout << " " << *p->middle;
-          std::cout << " (id=" << p->id << ")\n";
-        }
-      }
+  Найти ФИО по телефону:
+    psql -h localhost -U m4nuul -d kolibri_db -v phone="+7999..." -f sql/30_find_phone.sql
 
-      else if (choice == "3") {
-        std::string snils;
-        std::cout << "СНИЛС: ";
-        std::getline(std::cin, snils);
+  Найти ИНН по СНИЛС:
+    psql -h localhost -U m4nuul -d kolibri_db -v snils="123-456-789 00" -f sql/40_inn_by_snils.sql
 
-        auto inn = repo.findInnBySnils(snils);
-        if (!inn) std::cout << "ИНН не найден\n";
-        else std::cout << "ИНН: " << *inn << "\n";
-      }
-
-      else if (choice == "4") {
-        std::string s;
-        std::cout << "person_id: ";
-        std::getline(std::cin, s);
-        long id = std::stol(s);
-        repo.deletePerson(id);
-        std::cout << "OK. Удалено (если существовало)\n";
-      }
-
-      else {
-        std::cout << "Неизвестный пункт\n";
-      }
-    }
-
-  } catch (const std::exception& e) {
-    std::cerr << "Ошибка: " << e.what() << "\n";
-    return 1;
-  }
+  Удалить по id:
+    psql -h localhost -U m4nuul -d kolibri_db -v id=123 -f sql/50_delete.sql
+)";
   return 0;
 }
